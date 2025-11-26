@@ -165,6 +165,60 @@ Submitted at: ${new Date().toLocaleString()}
 });
 
 // ---------------------------
+// 3) MY WHY ACTIVITY ENDPOINT
+// ---------------------------
+app.post('/api/my-why', async (req, res) => {
+  try {
+    const { name, email, why } = req.body || {};
+
+    if (!name || !email || !why) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const subject = 'New “My Why” Reflection – CU Member';
+
+    const text = `
+A new "My Why" reflection has been submitted.
+
+Name: ${name}
+Email: ${email}
+
+Why I believe God brought me to CU:
+${why}
+
+Submitted at: ${new Date().toLocaleString()}
+    `;
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'CU New Members <onboarding@resend.dev>',
+        to: [CU_INBOX],
+        subject,
+        text
+      })
+    });
+
+    const resText = await response.text();
+    console.log('Resend (My Why) →', response.status, resText);
+
+    if (!response.ok) {
+      return res.status(500).json({ message: 'Error sending My Why email' });
+    }
+
+    return res.status(200).json({ message: 'Email sent' });
+
+  } catch (err) {
+    console.error('My Why error:', err);
+    return res.status(500).json({ message: 'Error sending My Why email' });
+  }
+});
+
+// ---------------------------
 // START SERVER
 // ---------------------------
 app.listen(PORT, () => {
