@@ -59,7 +59,7 @@ Submitted at: ${new Date().toLocaleString()}
       },
       body: JSON.stringify({
         from: 'CU New Members <onboarding@resend.dev>', // safe default sender
-        to: ['worship@churchunlimitedclt.com'],
+        to: ['churchunlimited2020@gmail.com'],
         subject,
         text
       })
