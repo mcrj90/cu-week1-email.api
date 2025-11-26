@@ -26,7 +26,7 @@ app.post('/api/week1-reflection', async (req, res) => {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const apiKey = "re_ges3oaCf_9oDqjY8uf8RKJYXhjyzv5MMu"; // your Resend API key
+    const apiKey = "re_QjyGwbiY_QBEnySF8TCVviBBAHG8nixkm"; // your Resend API key
 
     const subject = 'New Week 1 Reflection – CU New Member';
     const text = `
