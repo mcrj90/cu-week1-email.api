@@ -13,5 +13,3 @@
     "nodemailer": "^6.9.8"
   }
 }
-
-fix package.json for Render
