@@ -25,7 +25,7 @@ app.post('/api/week1-reflection', async (req, res) => {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  // Use your Resend API key
+  // Use your Resend API key (you can move this to env later)
   const apiKey = "re_ges3oaCf_9oDqjY8uf8RKJYXhjyzv5MMu";
 
   const subject = 'New Week 1 Reflection – CU New Member';
@@ -59,20 +59,22 @@ Submitted at: ${new Date().toLocaleString()}
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'CU New Members <no-reply@churchunlimitedclt.com>',
+        // Use Resend's verified default sender for now
+        from: 'CU New Members <onboarding@resend.dev>',
         to: ['worship@churchunlimitedclt.com'],
         subject,
         text
       })
     });
 
+    const resText = await response.text();
+    console.log('Resend status:', response.status, 'body:', resText);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Resend API error:', response.status, errorText);
       return res.status(500).json({ message: 'Error sending email' });
     }
 
-    console.log('Email successfully sent via Resend from:', email);
+    console.log('Email successfully sent via Resend for Week 1 reflection from:', email);
     res.status(200).json({ message: 'Email sent' });
 
   } catch (err) {
