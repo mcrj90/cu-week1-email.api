@@ -1,8 +1,8 @@
 // server.js
 const express = require('express');
-const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const fetch = require('node-fetch'); // required because Resend uses HTTPS API
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -11,38 +11,25 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Nodemailer transport using Google Workspace / Gmail SMTP
-// Values come from environment variables set in Render:
-//   SMTP_USER = your Workspace email (e.g. worship@churchunlimitedclt.com)
-//   SMTP_PASS = the app password or SMTP password
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // TLS on port 587
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
-});
-
-// Simple health check route
+// Health check route
 app.get('/', (req, res) => {
-  res.send('CU Week1 Email API is running');
+  res.send('CU Week1 Email API is running (Resend)');
 });
 
-// Main endpoint the form will POST to
+// Main form endpoint
 app.post('/api/week1-reflection', async (req, res) => {
   const { name, email, q1, q2, q3, q4 } = req.body || {};
 
+  // Basic validation
   if (!name || !email || !q1 || !q2 || !q3 || !q4) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  const mailOptions = {
-    from: `"CU New Members" <${process.env.SMTP_USER}>`,
-    to: 'worship@churchunlimitedclt.com',
-    subject: 'New Week 1 Reflection – CU New Member',
-    text: `
+  // Use your Resend API key
+  const apiKey = "re_ges3oaCf_9oDqjY8uf8RKJYXhjyzv5MMu";
+
+  const subject = 'New Week 1 Reflection – CU New Member';
+  const text = `
 A new Week 1 reflection has been submitted.
 
 Name: ${name}
@@ -61,15 +48,35 @@ What are you believing God for in this next chapter?
 ${q4}
 
 Submitted at: ${new Date().toLocaleString()}
-    `
-  };
+`;
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log('Email sent for Week 1 reflection from:', email);
+    // Send email via Resend API
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'CU New Members <no-reply@churchunlimitedclt.com>',
+        to: ['worship@churchunlimitedclt.com'],
+        subject,
+        text
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Resend API error:', response.status, errorText);
+      return res.status(500).json({ message: 'Error sending email' });
+    }
+
+    console.log('Email successfully sent via Resend from:', email);
     res.status(200).json({ message: 'Email sent' });
+
   } catch (err) {
-    console.error('Error sending email:', err);
+    console.error('Error calling Resend:', err);
     res.status(500).json({ message: 'Error sending email' });
   }
 });
