@@ -2,7 +2,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const fetch = require('node-fetch'); // required because Resend uses HTTPS API
+const fetch = require('node-fetch'); // v2.x, works with require()
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -16,24 +16,41 @@ app.get('/', (req, res) => {
   res.send('CU Week1 Email API is running (Resend)');
 });
 
-// Main form endpoint (TEMP TEST VERSION - no email yet)
+// Main form endpoint
 app.post('/api/week1-reflection', async (req, res) => {
-  const { name, email, q1, q2, q3, q4 } = req.body || {};
-
-  // Basic validation
-  if (!name || !email || !q1 || !q2 || !q3 || !q4) {
-    return res.status(400).json({ message: 'Missing required fields' });
-  }
-
-  console.log('Received Week 1 reflection:', req.body);
-
-  // For now, DON'T send email – just confirm it works end-to-end
-  return res.status(200).json({ message: 'Test OK – form reached the server.' });
-});
-
-
   try {
-    // Send email via Resend API
+    const { name, email, q1, q2, q3, q4 } = req.body || {};
+
+    // Basic validation
+    if (!name || !email || !q1 || !q2 || !q3 || !q4) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const apiKey = "re_ges3oaCf_9oDqjY8uf8RKJYXhjyzv5MMu"; // your Resend API key
+
+    const subject = 'New Week 1 Reflection – CU New Member';
+    const text = `
+A new Week 1 reflection has been submitted.
+
+Name: ${name}
+Email: ${email}
+
+How did you first hear about CU?
+${q1}
+
+What made you decide to visit C.H.U.R.C.H. Unlimited?
+${q2}
+
+What are you hoping to grow in spiritually during this season?
+${q3}
+
+What are you believing God for in this next chapter?
+${q4}
+
+Submitted at: ${new Date().toLocaleString()}
+    `;
+
+    // NOTE: await is INSIDE the async route handler – this is valid
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -41,8 +58,7 @@ app.post('/api/week1-reflection', async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        // Use Resend's verified default sender for now
-        from: 'CU New Members <onboarding@resend.dev>',
+        from: 'CU New Members <onboarding@resend.dev>', // safe default sender
         to: ['worship@churchunlimitedclt.com'],
         subject,
         text
@@ -57,11 +73,11 @@ app.post('/api/week1-reflection', async (req, res) => {
     }
 
     console.log('Email successfully sent via Resend for Week 1 reflection from:', email);
-    res.status(200).json({ message: 'Email sent' });
+    return res.status(200).json({ message: 'Email sent' });
 
   } catch (err) {
-    console.error('Error calling Resend:', err);
-    res.status(500).json({ message: 'Error sending email' });
+    console.error('Error in /api/week1-reflection handler:', err);
+    return res.status(500).json({ message: 'Error sending email' });
   }
 });
 
